@@ -1,16 +1,16 @@
 import 'styles/style.css';
-// TODO: Разобраться с webpack алиасами в ts
-import {
-    initCanvasContext,
-    drawCircle,
-    drawRect,
-} from './app/functions';
+import {fromEvent, Observable} from 'rxjs';
+import {map,} from 'rxjs/operators';
 
-import {
-    Ball,
-} from './app/classes';
-import {MovingBall} from "./app/classes/Ball";
-import {MovingRectangle} from "./app/classes/Rectangle/Rectangle";
+import {initCanvasContext,} from './app/functions';
+
+import {GameFiguresFactory} from './app/classes';
+import {MoveDirectory} from "./app/types/Moving";
+
+import  * as GameConfig from './config/game.config';
+import {RectangleParameters} from "./app/interfaces/RectangleParameters";
+// TODO: Разобраться с webpack алиасами в ts
+
 
 /*
 
@@ -37,24 +37,81 @@ class C {
 */
 
 (function(){
+
     document.addEventListener('DOMContentLoaded', () => {
         const wrapper = document.getElementById('canvas');
-        const ctx = wrapper ? initCanvasContext(wrapper) : null;
-        if (ctx) {
-            drawRect(ctx, {x: 100, y: 150, width: 50, height: 50, fillColor: "#ff0000"});
-            drawCircle(ctx, {x: 100, y: 100, r: 30});
-            const GameBall = new MovingBall(ctx, {x: 150, y: 150, r: 30});
-            const GameDeck = new MovingRectangle(ctx, {x: 10, y: 10, width: 50, height: 10, fillColor: "#ff0000"});
-            GameBall.draw();
-            GameDeck.draw();
-            function movie() {
-                //GameBall.movie();
-                //GameDeck.movie();
-                requestAnimationFrame(movie)
-            }
+        const ctx = wrapper ? initCanvasContext(wrapper, GameConfig.GAME_WRAPPER_WIDTH, GameConfig.GAME_WRAPPER_HEIGHT) : null;
 
-            movie();
+        if (!ctx) {
+            return;
         }
 
+        const GameBall = GameFiguresFactory.createFigure('ball', GameConfig.GameBallParameters);
+        const GamePaddle = GameFiguresFactory.createFigure('paddle', GameConfig.GamePaddleParameters);
+        const GameBricksArray = GameConfig.GameBricksParameters
+            .map((brick: RectangleParameters) => GameFiguresFactory.createFigure('block', brick));
+
+        // @ts-ignore
+        const $keyUpObserver: Observable<KeyboardEvent> = fromEvent(document, 'keydown');
+
+        $keyUpObserver.pipe(
+            map((event: KeyboardEvent) => {
+                    return event.key;
+                }
+            )
+        ).subscribe((code?: string) => {
+            switch (code) {
+                case 'ArrowLeft': {
+                    GamePaddle.moveFigure(ctx, MoveDirectory.left);
+                    break;
+                }
+                case 'ArrowRight': {
+                    GamePaddle.moveFigure(ctx, MoveDirectory.right);
+                    break;
+                }
+                default:
+                    return;
+            }
+        });
+        //const $gameStateObserver = BreakOutGame.$gameState.subscribe((state: GameState) => console.log(state));
+
+
+
+        drawScene();
+        draw();
+
+        function draw() {
+            movie();
+            calculateIncidents();
+            isLoose();
+            // @ts-ignore
+            clearCanvas(ctx);
+            drawScene();
+            requestAnimationFrame(draw);
+        }
+        draw();
+
+        function drawScene() {
+            // @ts-ignore
+            GameBall.drawFigure(ctx);
+            // @ts-ignore
+            GamePaddle.drawFigure(ctx);
+
+            // @ts-ignore
+            GameBricksArray.forEach((Brick) => Brick.drawFigure(ctx))
+        }
+
+        function movie() {
+            // @ts-ignore
+            GameBall.moveFigure(ctx);
+        }
+
+
+
+        function calculateIncidents() {}
+        function isLoose () {}
+        function clearCanvas (ctx: CanvasRenderingContext2D): void {
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+        }
     })
 }());

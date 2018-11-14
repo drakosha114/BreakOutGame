@@ -30,7 +30,7 @@ const config = {
 	},
     module: {
         rules: [
-			{
+			/*{
 				enforce: 'pre',
 				test: /\.(ts|js)x?$/,
 				exclude: /node_modules/,
@@ -40,7 +40,7 @@ const config = {
 					failOnWarning: false,
 					fix: true
 				},
-			},
+			},*/
         	{
 				test: /\.(ts|js)x?$/,
 				exclude: /node_modules/,
@@ -76,7 +76,7 @@ const config = {
 		contentBase: path.join(BUILD_PATH),
 		historyApiFallback: true,
 		host: '0.0.0.0',
-		port: 8081,
+		//port: 8081,
 		hot: true,
 	}
 };
@@ -86,6 +86,7 @@ module.exports = env => {
 	if (env.NODE_ENV === 'development') {
 		config.mode = 'development';
 		config.plugins.push(new webpack.HotModuleReplacementPlugin());
+		config.devtool = 'cheap-module-eval-source-map';
 	}
 	
 	return config;
